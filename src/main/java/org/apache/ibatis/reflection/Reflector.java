@@ -15,26 +15,15 @@
  */
 package org.apache.ibatis.reflection;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ReflectPermission;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import org.apache.ibatis.reflection.invoker.GetFieldInvoker;
 import org.apache.ibatis.reflection.invoker.Invoker;
 import org.apache.ibatis.reflection.invoker.MethodInvoker;
 import org.apache.ibatis.reflection.invoker.SetFieldInvoker;
 import org.apache.ibatis.reflection.property.PropertyNamer;
+
+import java.lang.reflect.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * This class represents a cached set of class definition information that
@@ -138,21 +127,28 @@ public class Reflector {
       List<Method> getters = conflictingGetters.get(propName);
       Iterator<Method> iterator = getters.iterator();
       Method firstMethod = iterator.next();
+      // 只有一个size，则说明没有冲突，可以直接add
       if (getters.size() == 1) {
         addGetMethod(propName, firstMethod);
       } else {
+        // 以第一个为基准
         Method getter = firstMethod;
         Class<?> getterType = firstMethod.getReturnType();
+
+        // 遍历其余的
         while (iterator.hasNext()) {
           Method method = iterator.next();
           Class<?> methodType = method.getReturnType();
+          // 如果返回类型相同，则认为冲突
           if (methodType.equals(getterType)) {
             throw new ReflectionException("Illegal overloaded getter method with ambiguous type for property " 
                 + propName + " in class " + firstMethod.getDeclaringClass()
                 + ".  This breaks the JavaBeans " + "specification and can cause unpredicatble results.");
           } else if (methodType.isAssignableFrom(getterType)) {
             // OK getter type is descendant
+            // methodType 是 getterType的父类
           } else if (getterType.isAssignableFrom(methodType)) {
+            // getterType 是 methodType 的父类， 则赋值给getter，更合适，表达更清晰
             getter = method;
             getterType = methodType;
           } else {
@@ -175,6 +171,7 @@ public class Reflector {
 
   private void addSetMethods(Class<?> cls) {
     Map<String, List<Method>> conflictingSetters = new HashMap<String, List<Method>>();
+    // get方法和set方法，调用同一个方法，多余。  可以拆分为两个方法，或者将该方法抽取到公共部分
     Method[] methods = getClassMethods(cls);
     for (Method method : methods) {
       String name = method.getName();
