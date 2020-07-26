@@ -109,9 +109,11 @@ public class SqlSourceBuilder extends BaseBuilder {
         String name = entry.getKey();
         String value = entry.getValue();
         if ("javaType".equals(name)) {
+          // 如果用户明确配置了 javaType，则以用户的配置为准
           javaType = resolveClass(value);
           builder.javaType(javaType);
         } else if ("jdbcType".equals(name)) {
+          // 解析 jdbcType
           builder.jdbcType(resolveJdbcType(value));
         } else if ("mode".equals(name)) {
           builder.mode(resolveParameterMode(value));
@@ -133,6 +135,7 @@ public class SqlSourceBuilder extends BaseBuilder {
       }
       //#{age,javaType=int,jdbcType=NUMERIC,typeHandler=MyTypeHandler}
       if (typeHandlerAlias != null) {
+        // 解析 TypeHandler
         builder.typeHandler(resolveTypeHandler(javaType, typeHandlerAlias));
       }
       return builder.build();
