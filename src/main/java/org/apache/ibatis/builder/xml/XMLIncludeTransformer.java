@@ -50,16 +50,23 @@ public class XMLIncludeTransformer {
       //走到这里，单独解析<include refid="userColumns"/>
       //拿到SQL片段
       Node toInclude = findSqlFragment(getStringAttribute(source, "refid"));
-      //递归调用自己,应用上?
+      // 递归调用，解析里面的sql片段，直到不再包含include
       applyIncludes(toInclude);
-      //总之下面就是将字符串拼接进来，看不懂。。。
+      // toInclude : sql, source : inlude所在文件
+      // 如果不在同一个文件
       if (toInclude.getOwnerDocument() != source.getOwnerDocument()) {
+        // 将sql节点数据，深拷贝到include所在文件
         toInclude = source.getOwnerDocument().importNode(toInclude, true);
       }
+      // include的父节点，也就是SELECT | UDPATE....，将 <include> 节点替换为 <sql> 节点
       source.getParentNode().replaceChild(toInclude, source);
+      // 如果sql有孩子节点
       while (toInclude.hasChildNodes()) {
+        // 将 <sql> 中的内容插入到 <sql> 节点之前
         toInclude.getParentNode().insertBefore(toInclude.getFirstChild(), toInclude);
       }
+      // 前面已经将 <sql> 节点的内容插入到 dom 中了，
+      // 现在不需要 <sql> 节点了，这里将该节点从 dom 中移除
       toInclude.getParentNode().removeChild(toInclude);
     } else if (source.getNodeType() == Node.ELEMENT_NODE) {
         //一开始会走这段，取得所有儿子

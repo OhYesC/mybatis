@@ -15,10 +15,6 @@
  */
 package org.apache.ibatis.builder;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.ibatis.mapping.ParameterMapping;
 import org.apache.ibatis.mapping.SqlSource;
 import org.apache.ibatis.parsing.GenericTokenParser;
@@ -27,6 +23,10 @@ import org.apache.ibatis.reflection.MetaClass;
 import org.apache.ibatis.reflection.MetaObject;
 import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.type.JdbcType;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Clinton Begin
@@ -85,18 +85,19 @@ public class SqlSourceBuilder extends BaseBuilder {
       String property = propertiesMap.get("property");
       Class<?> propertyType;
       //这里分支比较多，需要逐个理解
+      // metaParameters 为 DynamicContext 成员变量 bindings 的元信息对象
       if (metaParameters.hasGetter(property)) { // issue #448 get type from additional params
-        propertyType = metaParameters.getGetterType(property);
+        propertyType = metaParameters.getGetterType(property); // 有get方法，则直接赋值
       } else if (typeHandlerRegistry.hasTypeHandler(parameterType)) {
-        propertyType = parameterType;
+        propertyType = parameterType; // 如果是typeHandler定义的类型，则按照typehandler赋值
       } else if (JdbcType.CURSOR.name().equals(propertiesMap.get("jdbcType"))) {
-        propertyType = java.sql.ResultSet.class;
+        propertyType = java.sql.ResultSet.class; // 如果是jdbc定义的参数类型，则也可以赋值
       } else if (property != null) {
         MetaClass metaClass = MetaClass.forClass(parameterType);
         if (metaClass.hasGetter(property)) {
-          propertyType = metaClass.getGetterType(property);
+          propertyType = metaClass.getGetterType(property); // 如果不为空，且反射拿到数据，则说明是一个自定义的对象类型， 则获取成员变量的类型
         } else {
-          propertyType = Object.class;
+          propertyType = Object.class; //  如果 property 为空，或 parameterType 是 Map 类型，则设置为object类型
         }
       } else {
         propertyType = Object.class;

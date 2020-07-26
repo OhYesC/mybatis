@@ -98,7 +98,8 @@
         <otherwise>
           <if test="ids != null">
             AND id IN
-            <foreach item="item_id" index="index" open="(" close=")" separator="," collection="ids">#{ids[${index}]}
+            <foreach item="item_id" index="index" open="(" close=")" separator="," collection="ids">
+                #{ids[${index}]}
             </foreach>
           </if>
           <trim prefix="AND">
